@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI SQL Query Bot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #000000, #0a1a0a, #0d2b0d);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(0, 20, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 200, 0, 0.15);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 25px 50px rgba(0, 100, 0, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #fff;
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header h1 span {
+            color: #00c853;
+        }
+
+        .header p {
+            color: rgba(0, 200, 0, 0.6);
+            font-size: 1em;
+        }
+
+        .input-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .input-section input {
+            flex: 1;
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 200, 0, 0.2);
+            background: rgba(0, 20, 0, 0.8);
+            color: #fff;
+            font-size: 1em;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .input-section input::placeholder {
+            color: rgba(0, 200, 0, 0.4);
+        }
+
+        .input-section input:focus {
+            border-color: #00c853;
+            background: rgba(0, 30, 0, 0.9);
+            box-shadow: 0 0 10px rgba(0, 200, 0, 0.2);
+        }
+
+        .input-section button {
+            padding: 15px 30px;
+            background: #00c853;
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .input-section button:hover {
+            background: #00e676;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 200, 0, 0.4);
+        }
+
+        .input-section button:disabled {
+            background: #1a3a1a;
+            color: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .suggestion {
+            background: rgba(0, 200, 0, 0.08);
+            border: 1px solid rgba(0, 200, 0, 0.25);
+            color: #00c853;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .suggestion:hover {
+            background: rgba(0, 200, 0, 0.2);
+            box-shadow: 0 0 10px rgba(0, 200, 0, 0.2);
+        }
+
+        .loading {
+            text-align: center;
+            color: rgba(0, 200, 0, 0.6);
+            padding: 20px;
+            display: none;
+        }
+
+        .spinner {
+            border: 3px solid rgba(0, 200, 0, 0.1);
+            border-top: 3px solid #00c853;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-section {
+            display: none;
+        }
+
+        .answer-card {
+            background: rgba(0, 100, 0, 0.15);
+            border: 1px solid rgba(0, 200, 0, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .answer-card h2 {
+            color: #00c853;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+
+        .answer-card p {
+            color: #fff;
+            font-size: 1.3em;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        .sql-card {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 200, 0, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+        }
+
+        .sql-card h2 {
+            color: rgba(0, 200, 0, 0.6);
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sql-card h2:hover {
+            color: #00c853;
+        }
+
+        .sql-content {
+            display: none;
+        }
+
+        .sql-content pre {
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin-bottom: 15px;
+        }
+
+        .sql-content .raw-result {
+            color: rgba(0, 200, 0, 0.4);
+            font-size: 0.85em;
+        }
+
+        .error-card {
+            background: rgba(255, 0, 0, 0.08);
+            border: 1px solid rgba(255, 0, 0, 0.25);
+            border-radius: 15px;
+            padding: 25px;
+            color: #ff6b6b;
+        }
+
+        .history {
+            margin-top: 30px;
+        }
+
+        .history h3 {
+            color: rgba(0, 200, 0, 0.5);
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+
+        .history-item {
+            background: rgba(0, 20, 0, 0.5);
+            border: 1px solid rgba(0, 200, 0, 0.08);
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-item:hover {
+            background: rgba(0, 50, 0, 0.5);
+            border-color: rgba(0, 200, 0, 0.2);
+        }
+
+        .history-item .q {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9em;
+        }
+
+        .history-item .a {
+            color: #00c853;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI SQL <span>Query Bot</span></h1>
+            <p>Your AI powered SQL inventory assistant</p>
+        </div>
+
+        <div class="input-section">
+            <input type="text" id="questionInput" placeholder="e.g. How many Nike t-shirts do we have?" />
+            <button onclick="askQuestion()" id="askBtn">Ask</button>
+        </div>
+
+        <div class="suggestions">
+            <span class="suggestion" onclick="fillQuestion(this)">How many t-shirts in total?</span>
+            <span class="suggestion" onclick="fillQuestion(this)">How many white Nike t-shirts?</span>
+            <span class="suggestion" onclick="fillQuestion(this)">Total inventory value?</span>
+            <span class="suggestion" onclick="fillQuestion(this)">How many Levi's t-shirts?</span>
+            <span class="suggestion" onclick="fillQuestion(this)">Revenue from Adidas with discounts?</span>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Thinking...</p>
+        </div>
+
+        <div class="result-section" id="result">
+            <div class="answer-card">
+                <h2>Answer</h2>
+                <p id="answerText"></p>
+            </div>
+            <div class="sql-card">
+                <h2 onclick="toggleSQL()">SQL Query Used <span id="toggleIcon">▼</span></h2>
+                <div class="sql-content" id="sqlContent">
+                    <pre id="sqlText"></pre>
+                    <div class="raw-result">Raw DB Result: <span id="rawResult"></span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="error-card" id="errorCard" style="display:none">
+            <strong>Error:</strong> <span id="errorText"></span>
+        </div>
+
+        <div class="history" id="historySection" style="display:none">
+            <h3>Recent Questions</h3>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        let history = [];
+
+        document.getElementById("questionInput").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") askQuestion();
+        });
+
+        function fillQuestion(el) {
+            document.getElementById("questionInput").value = el.textContent;
+            askQuestion();
+        }
+
+        function toggleSQL() {
+            const content = document.getElementById("sqlContent");
+            const icon = document.getElementById("toggleIcon");
+            if (content.style.display === "block") {
+                content.style.display = "none";
+                icon.textContent = "▼";
+            } else {
+                content.style.display = "block";
+                icon.textContent = "▲";
+            }
+        }
+
+        async function askQuestion() {
+            const question = document.getElementById("questionInput").value.trim();
+            if (!question) return;
+
+            document.getElementById("loading").style.display = "block";
+            document.getElementById("result").style.display = "none";
+            document.getElementById("errorCard").style.display = "none";
+            document.getElementById("askBtn").disabled = true;
+
+            try {
+                const response = await fetch("/ask", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ question })
+                });
+
+                const data = await response.json();
+
+                document.getElementById("loading").style.display = "none";
+                document.getElementById("askBtn").disabled = false;
+
+                if (data.error) {
+                    document.getElementById("errorCard").style.display = "block";
+                    document.getElementById("errorText").textContent = data.error;
+                } else {
+                    document.getElementById("result").style.display = "block";
+                    document.getElementById("answerText").textContent = data.answer;
+                    document.getElementById("sqlText").textContent = data.sql;
+                    document.getElementById("rawResult").textContent = data.raw;
+
+                    history.unshift({ q: question, a: data.answer });
+                    if (history.length > 5) history.pop();
+                    updateHistory();
+                }
+            } catch (err) {
+                document.getElementById("loading").style.display = "none";
+                document.getElementById("askBtn").disabled = false;
+                document.getElementById("errorCard").style.display = "block";
+                document.getElementById("errorText").textContent = "Something went wrong. Please try again.";
+            }
+        }
+
+        function updateHistory() {
+            const section = document.getElementById("historySection");
+            const list = document.getElementById("historyList");
+            section.style.display = "block";
+            list.innerHTML = history.map(item => `
+                <div class="history-item" onclick="document.getElementById('questionInput').value='${item.q}'">
+                    <span class="q">${item.q}</span>
+                    <span class="a">${item.a.substring(0, 30)}...</span>
+                </div>
+            `).join("");
+        }
+    </script>
+</body>
+</html>
